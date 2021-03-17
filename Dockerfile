@@ -1,7 +1,7 @@
-FROM nvidia/cuda:11.0-devel
+FROM nvidia/cuda:10.2-devel-ubuntu18.04
 
 ENV TZ=Europe/Prague
-ENV CUDA_HOME="/usr/local/cuda11.0"
+ENV CUDA_HOME="/usr/local/cuda-10.2"
 ENV FORCE_CUDA="1"
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -29,7 +29,9 @@ RUN apt-get install -y libopenblas-dev \
     && apt-get install -y libgl1-mesa-glx \
     && apt-get install -y wget \
     && apt-get install -y unzip \
+    && apt-get install libusb-1.0-0 \
     && apt-get install -y python3-pip \
+    && pip3 install --upgrade pip \
     && pip3 install numpy \
     && pip3 install scipy \
     && pip3 install matplotlib \
@@ -39,9 +41,25 @@ RUN apt-get install -y libopenblas-dev \
     && pip3 install easydict \
     && pip3 install joblib \
     && pip3 install scikit-learn \
-    && pip3 install torch
+    && pip3 install torch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2
 
-RUN ln -s /usr/bin/python3.8 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
+
+# Funguje ale CPU only -> pri buildu to nema pristup k GPU, musi se nainstalovat po spusteni, stejne jako pak requirements pro FCGF a STS
+#RUN pip3 install -U MinkowskiEngine --install-option="--blas=openblas" -v --no-deps
+RUN cd home && git clone https://github.com/chrischoy/FCGF.git 
+    # && cd FCGF && pip3 install -r requirements.txt 
+    # && ./scripts/download_datasets.sh /home/datasets/FCGF \
+    # && python3 train.py --threed_match_dir /home/datasets/FCGF/threedmatch/ --batch_size 2
+    #bash ./scripts/download_3dmatch_test.sh ./datasets/threedmatch_test/
+
+RUN cd home && git clone https://github.com/chrischoy/SpatioTemporalSegmentation/ 
+   # && cd SpatioTemporalSegmentation && pip3 install -r requirements.txt
+
+
+
+
+#RUN ln -s /usr/bin/python3.8 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
+#RUN ln -s /usr/bin/python3.8 /usr/bin/python 
 
 #funguje ale moc nove: 
 #RUN echo "alias pip=pip3" >>  ~/.bashrc && echo "alias python=python3" >>  ~/.bashrc && pip3 install -U MinkowskiEngine --install-option="--blas=openblas" -v      
@@ -50,12 +68,21 @@ RUN ln -s /usr/bin/python3.8 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
 #nefunguje:
 #RUN echo "alias pip=pip3" >>  ~/.bashrc && echo "alias python=python3" >>  ~/.bashrc && pip3 install git+https://github.com/NVIDIA/MinkowskiEngine.git@v0.5
 
-RUN export CXX=g++-7
-RUN echo "alias pip=pip3" >>  ~/.bashrc && echo "alias python=python3" >>  ~/.bashrc \
-    && pip3 install git+https://github.com/NVIDIA/MinkowskiEngine.git@v0.5 --install-option="--blas=openblas"
+#RUN pip3 install -U git+https://github.com/NVIDIA/MinkowskiEngine --no-deps --install-option="--force_cuda" 
 
-ADD requirementsFCGF.txt .
-RUN pip3 install -r requirementsFCGF.txt 
+#prestalo bezet, branch v0.5 neni dostupna?
+#RUN export CXX=g++-7
+#RUN echo "alias pip=pip3" >>  ~/.bashrc && echo "alias python=python3" >>  ~/.bashrc \
+#    && pip3 install git+https://github.com/NVIDIA/MinkowskiEngine.git@v0.5 --install-option="--blas=openblas" --install-option="--force_cuda" 
+
+#RUN export CXX=g++-7
+#RUN echo "alias pip=pip3" >>  ~/.bashrc && echo "alias python=python3" >>  ~/.bashrc \
+#    && pip3 install git+https://github.com/NVIDIA/MinkowskiEngine.git@v0.5 --install-option="--blas=openblas" --install-option="--force_cuda" 
+
+#RUN pip3 install -U MinkowskiEngine --install-option="--blas=openblas" -v --no-deps
+
+#ADD requirementsFCGF.txt .
+#RUN pip3 install -r requirementsFCGF.txt 
 
 #RUN cd home && git clone https://github.com/MIT-SPARK/TEASER-plusplus.git && cd TEASER-plusplus && mkdir build && cd build && cmake .. && make && ctest && make instal#l
 
